@@ -48,7 +48,7 @@ omp -h localhost -u admin -w admin -iX '
 
 ########################################################################################################################
 
-OpenVAS from External Interface
+Accessing OpenVAS Web UI from External Interface
 -------------------------------------------------------------
 
 We're on systemd, you actually need to modify 3 .service files:
@@ -88,7 +88,7 @@ that's it you are good to go
 
 #########################################################################################################################
 
-OpenVAS scan with credentials for targets
+Configuration of OpenVAS for credentials based target's scans
 -----------------------------------------
 
 omp -h localhost -u admin -w admin --xml='
@@ -113,4 +113,4 @@ omp -h 10.204.233.68 -u admin -w admin -X '
 </ssh_lsc_credential>
 </create_target>'
 
-Rest is same as above stpes
+**Rest of the steps are same as above steps**
