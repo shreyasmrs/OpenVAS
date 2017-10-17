@@ -1,0 +1,116 @@
+OpenVAS steps in omp 
+
+
+*New user Creation
+openvasmd --user=admin --new-password=new_password -r Admin
+
+*Connecting to openvas using omp 
+omp -h localhost -p 9390 -u admin -w admin
+
+*Setting up a target
+omp -h localhost -u admin -w admin --xml='
+<create_target>
+<name>Target Name</name>
+<hosts>10.203.xxx.xxx</hosts>
+</create_target>'
+
+-Response
+<create_target_response id="d4edce2d-465e-4ccb-ad6d-ebe50d0a3356" status_text="OK, resource created" status="201"></create_target_response>
+
+*Setting up task 
+omp -h localhost -u admin -w admin --xml='
+<create_task>
+<name>omp winxp test</name>
+<comment>omp cli testing</comment>
+<config id="daba56c8-73ec-11df-a475-002264764cea"/>
+<target id="d4edce2d-465e-4ccb-ad6d-ebe50d0a3356"/>
+</create_task>'
+
+-Response
+<create_task_response id="730a5026-2097-4455-8d7b-66e5ea22115c" status_text="OK, resource created" status="201"></create_task_response>
+
+*Start scan
+omp -h localhost -u admin -w admin --xml='
+<start_task task_id="730a5026-2097-4455-8d7b-66e5ea22115c"/>'
+
+*Checking the status of scan 
+omp -h localhost -u admin -w admin -p 9390 -G
+
+*Getting the report ID
+omp -h localhost -u admin -w admin -p 9390 -iX '
+<get_tasks task_id="730a5026-2097-4455-8d7b-66e5ea22115c" details="1"/>'
+
+In xml console output we get the report ID :<report id="f7a4c6a1-68ed-4ce6-92a4-65a1c53303ba">
+
+*Getting report
+omp -h localhost -u admin -w admin -iX '
+<get_reports report_id="f7a4c6a1-68ed-4ce6-92a4-65a1c53303ba" format_id="a994b278-1f62-11e1-96ac-406186ea4fc5"/>' > /root/Desktop/filename.xml
+
+########################################################################################################################
+
+OpenVAS from External Interface
+-------------------------------------------------------------
+
+We're on systemd, you actually need to modify 3 .service files:
+
+cd /lib/systemd/system
+
+Files are: greenbone-security-assistant.service, openvas-manager.service and openvas-scanner.service.
+To make it quick you may want to use sed. This line will replace all 127.0.0.1 to 0.0.0.0 which will allow all services be avaliable on all interfaces. You should replace 0.0.0.0 to the address of your choice.
+
+sed -e 's/127.0.0.1/0.0.0.0/g' greenbone-security-assistant.service openvas-manager.service openvas-scanner.service
+
+Verify, that all will be done as you want. If you're happy with the changes, just add -i to the end of previous command.
+
+sed -e 's/127.0.0.1/0.0.0.0/g' greenbone-security-assistant.service openvas-manager.service openvas-scanner.service -i
+
+Lastly you need to reload daemons, since you've made changes to files and restart services.
+
+systemctl daemon-reload
+systemctl restart greenbone-security-assistant.service openvas-manager.service openvas-scanner.service
+
+Verify, that all services are listening on desired host:
+
+ss -nalt
+
+If restarting sevices didn't work, try to restart server itself.
+
+
+########################################################################################################################
+
+OpenVAS credentials based scan works only if the below commands are executed on openvas machine
+------------------------------------------------------------------------------------------------
+make a dir in openvas machine
+	mkdir /var/lib/openvas/gnupg
+
+
+that's it you are good to go
+
+#########################################################################################################################
+
+OpenVAS scan with credentials for targets
+-----------------------------------------
+
+omp -h localhost -u admin -w admin --xml='
+<create_lsc_credential>
+<name>Admin SSH key</name>
+<login>shreyas</login>
+<password>asdzxc</password>
+</create_lsc_credential>'
+
+
+*Get list of credentials
+omp -h 10.204.233.68 -u admin -w admin -iX '<get_lsc_credentials/>'
+ 
+
+*Creating target with credentials
+omp -h 10.204.233.68 -u admin -w admin -X '
+<create_target>
+<name>Tt VM</name>
+<hosts>10.0.1.1</hosts>
+<ssh_lsc_credential id="dd55f5bf-c465-4939-9448-363395ec72fe">
+<port>22</port>
+</ssh_lsc_credential>
+</create_target>'
+
+Rest is same as above stpes
